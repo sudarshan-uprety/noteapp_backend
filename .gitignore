@@ -1,0 +1,33 @@
+# Compiled binary files
+*.exe
+*.out
+
+# Log files
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environment variables file
+.env
+
+# Dependency directories
+/bin/
+/vendor/
+/go.sum
+/go.mod
+
+# Compiled Go code
+*.test
+*.prof
+
+# IDE-specific files
+.idea/
+.vscode/
+
+# Application configuration files (if generated)
+/config/app-config.json
+
+# Optional: Exclude database migrations (if using a tool like GORM)
+/database/migrations/
