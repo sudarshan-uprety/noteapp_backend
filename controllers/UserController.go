@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"noteapp/database"
 	"noteapp/models"
@@ -68,10 +67,27 @@ func Login() gin.HandlerFunc {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"error": "wrong credentials.",
 			})
-			fmt.Println("wrong password bro wrong")
 			return
 		}
-		fmt.Println("yeppp correct password")
+		accessToken, refreshToken, accessTokenExpTime, refreshTokenExpTime, err := utils.GenerateTokens(int(user.ID), user.Email)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate tokens"})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"access_token":      accessToken,
+			"refresh_token":     refreshToken,
+			"access_token_exp":  accessTokenExpTime,
+			"refresh_token_exp": refreshTokenExpTime,
+			"user": gin.H{
+				"id":         user.ID,
+				"email":      user.Email,
+				"phone":      user.Phone,
+				"created_at": user.CreatedAt,
+				// Include other user details you want to send
+			},
+		})
 
 	}
 }

@@ -1,48 +1,45 @@
 package utils
 
 import (
-	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(ttl time.Duration, payload interface{}, secretJWTKey string) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
+var (
+	accessTokenDuration  = 1 * time.Hour
+	refreshTokenDuration = 7 * 24 * time.Hour
+)
 
-	now := time.Now().UTC()
-	claims := token.Claims.(jwt.MapClaims)
+func GenerateTokens(userID int, email string) (string, string, time.Time, time.Time, error) {
+	// Generate access
+	accessToken := jwt.New(jwt.SigningMethodHS256)
+	accessTokenClaims := accessToken.Claims.(jwt.MapClaims)
+	accessTokenClaims["user_id"] = userID
+	accessTokenClaims["email"] = email
+	accessTokenClaims["exp"] = time.Now().Add(accessTokenDuration).Unix()
+	accessTokenClaims["iat"] = time.Now().Unix()
 
-	claims["sub"] = payload
-	claims["exp"] = now.Add(ttl).Unix()
-	claims["iat"] = now.Unix()
-	claims["nbf"] = now.Unix()
-
-	tokenString, err := token.SignedString([]byte(secretJWTKey))
-
+	accessTokenString, err := accessToken.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
-		return "", fmt.Errorf("generating JWT Token failed: %w", err)
+		return "", "", time.Time{}, time.Time{}, err
 	}
+	accessTokenExpTime := time.Unix(accessTokenClaims["exp"].(int64), 0)
 
-	return tokenString, nil
-}
+	// Generate refresh token
+	refreshToken := jwt.New(jwt.SigningMethodHS256)
+	refreshTokenClaims := refreshToken.Claims.(jwt.MapClaims)
+	refreshTokenClaims["user_id"] = userID
+	refreshTokenClaims["email"] = email
+	refreshTokenClaims["exp"] = time.Now().Add(refreshTokenDuration).Unix()
+	refreshTokenClaims["iat"] = time.Now().Unix()
 
-func ValidateToken(token string, signedJWTKey string) (interface{}, error) {
-	tok, err := jwt.Parse(token, func(jwtToken *jwt.Token) (interface{}, error) {
-		if _, ok := jwtToken.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected method: %s", jwtToken.Header["alg"])
-		}
-
-		return []byte(signedJWTKey), nil
-	})
+	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
-		return nil, fmt.Errorf("invalidate token: %w", err)
+		return "", "", time.Time{}, time.Time{}, err
 	}
+	refreshTokenExpTime := time.Unix(refreshTokenClaims["exp"].(int64), 0)
 
-	claims, ok := tok.Claims.(jwt.MapClaims)
-	if !ok || !tok.Valid {
-		return nil, fmt.Errorf("invalid token claim")
-	}
-
-	return claims["sub"], nil
+	return accessTokenString, refreshTokenString, accessTokenExpTime, refreshTokenExpTime, nil
 }
