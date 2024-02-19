@@ -9,5 +9,6 @@ import (
 func UserRouters(incomingRoutes *gin.Engine) {
 	incomingRoutes.POST("/register", controllers.RegitserUser())
 	incomingRoutes.POST("/login", controllers.Login())
+	incomingRoutes.POST("/refresh", controllers.Refresh())
 
 }

@@ -91,3 +91,27 @@ func Login() gin.HandlerFunc {
 
 	}
 }
+
+func Refresh() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var body = structure.RefreshInputStruct{}
+		if err := ctx.Bind(&body); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"errpr": err.Error(),
+			})
+			return
+		}
+		access_token, refresh_token, accessTokenExpTime, refreshTokenExpTime, err := utils.RefreshTokens(body.Refresh_Token)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate tokens"})
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{
+			"access_token":      access_token,
+			"refresh_token":     refresh_token,
+			"access_token_exp":  accessTokenExpTime,
+			"refresh_token_exp": refreshTokenExpTime,
+		})
+
+	}
+}
